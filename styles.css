@@ -1,0 +1,155 @@
+
+/* styles.css — inherit destiny.gg chat theme, minimal footprint */
+.edgg-wrap {
+  margin-top: 4px;
+  margin-bottom: 6px;
+  overflow-anchor: none;
+}
+
+.edgg-embed,
+.edgg-media {
+  display: block;
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 6px;
+  box-sizing: border-box;
+  background: rgba(0,0,0,0.15);
+}
+
+.edgg-tweet {
+  padding: 8px 10px;
+  font: inherit;
+  color: inherit;
+}
+
+.edgg-tweet .edgg-tweet-line {
+  opacity: 0.8;
+  margin-bottom: 6px;
+}
+
+.edgg-tweet .edgg-tweet-link {
+  text-decoration: none;
+  word-break: break-word;
+  color: inherit;
+  opacity: 0.9;
+}
+
+.edgg-card-meta {
+  margin-top: 6px;
+  font-size: 12px;
+  opacity: 0.9;
+}
+
+.edgg-card-title { 
+  font-weight: 600; 
+}
+
+.edgg-card-author { 
+  font-weight: 400; 
+  opacity: 0.8; 
+}
+
+.edgg-wrap, 
+.edgg-card, 
+.edgg-media { 
+  cursor: pointer; 
+}
+
+#edgg-hover-preview {
+  position: fixed;
+  z-index: 50;
+  display: none;
+  left: 0; top: 0;
+  width: auto;
+  height: auto;
+  background: rgba(20,20,20,0.95);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+  color: inherit;
+}
+
+#edgg-hover-preview .edgg-hover-inner {
+  position: relative;
+  width: 100%; 
+  height: 100%;
+  padding: 8px;
+  box-sizing: border-box;
+}
+
+#edgg-hover-preview .edgg-hover-content {
+  width: 100%; 
+  height: 100%;
+  overflow: hidden;
+}
+
+.edgg-hover-body { 
+  width: 100%; 
+  height: 100%; 
+
+}
+
+.edgg-hover-media {
+  display: block;
+  width: 100%; 
+  height: 100%;
+  object-fit: contain;
+}
+
+/* Right-justified embed wrapper and full-width media */
+.edgg-wrap.edgg-right {
+  display: flex;
+  justify-content: flex-end;
+}
+.edgg-wrap.edgg-right > .edgg-media,
+.edgg-wrap.edgg-right .edgg-card,
+.edgg-wrap.edgg-right .edgg-embed {
+  width: 100%;
+}
+.edgg-media { 
+  width: 100%; 
+  height: auto; 
+  display: block; 
+}
+
+/* Minimal tweet card styling */
+.edgg-embed.edgg-tweet {
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 8px;
+  padding: 8px;
+  background: rgba(36,40,50,0.5);
+  font-size: 13px;
+  color: var(--m3c11);
+  font-family: "Roboto", Helvetica, "Trebuchet MS", Verdana, sans-serif;
+  line-height: 1.65em;
+  outline: 0 !important;
+  text-rendering: optimizeLegibility;
+  font-feature-settings: "kern";
+}
+.edgg-tweet-user { 
+  font-weight: 600; 
+  opacity: 0.9; 
+}
+.edgg-tweet-text { 
+  white-space: pre-wrap; 
+  margin: 6px 0; 
+}
+.edgg-tweet-media { 
+  display: grid; 
+  grid-template-columns: repeat(2, 1fr); 
+  gap: 4px; 
+}
+.edgg-tweet-photo { 
+  width: 100%; 
+  height: auto; 
+  border-radius: 4px; 
+}
+.edgg-tweet-footer { 
+  opacity: 0.8; 
+  font-size: 12px; 
+}
+.edgg-tweet-video { 
+  width: 100%; 
+  height: auto; 
+  display: block; 
+  border-radius: 4px; 
+}
