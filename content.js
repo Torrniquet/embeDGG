@@ -397,7 +397,8 @@
           wrap.appendChild(meta);
           // Prepare sticky state before we append
           const scroller = getScrollContainer(container);
-          const shouldStick = STATE.stickyWanted || isAtBottom(scroller, 2);
+          const linkInView = isElementInView(container, scroller);
+          const shouldStick = linkInView && (STATE.stickyWanted || isAtBottom(scroller, 2));
           container.appendChild(wrap);
           maintainStickyAfterAppend(scroller, shouldStick, wrap);
 
@@ -524,8 +525,9 @@
 
   function injectBelow(container, el, originUrl, desiredWidthPx) {
     const scroller = getScrollContainer(container);
-    // Only stick when truly at bottom or stickyWanted is set
-    const shouldStick = STATE.stickyWanted || isAtBottom(scroller, 2);
+    // Only stick when the message/link is visible AND we're at-bottom/sticky
+    const linkInView = isElementInView(container, scroller);
+    const shouldStick = linkInView && (STATE.stickyWanted || isAtBottom(scroller, 2));
 
     const dataUrl = el.tagName === "IMG" || el.tagName === "IFRAME" ? el.getAttribute("src") : null;
     if (dataUrl) {
@@ -666,6 +668,15 @@
   }
 
   // ---- Auto-scroll helpers ----
+  function isElementInView(el, scroller, threshold = 1) {
+    try {
+      if (!el || !scroller) return false;
+      const er = el.getBoundingClientRect();
+      const isDoc = (scroller === document.scrollingElement) || (scroller === document.documentElement) || (scroller === document.body);
+      const sr = isDoc ? { top: 0, bottom: window.innerHeight, left: 0, right: window.innerWidth } : scroller.getBoundingClientRect();
+      return (er.bottom > sr.top + threshold) && (er.top < sr.bottom - threshold);
+    } catch (_) { return false; }
+  }
   function maintainStickyAfterAppend(scroller, shouldStick, rootEl) {
     if (!shouldStick) return;
 
