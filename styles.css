@@ -182,4 +182,10 @@
 }
 .edgg-spoiler .edgg-spoiler-blur {
   filter: blur(14px) saturate(0.6);
+  transition: filter 120ms ease;
+}
+
+/* Prevent interaction with underlying media while covered */
+.edgg-spoiler .edgg-spoiler-blur {
+  pointer-events: none;
 }

@@ -697,8 +697,8 @@
   // ---- Spoiler overlay helpers ----
   function applySpoilerIfNeeded(wrap) {
     if (!wrap || !(wrap instanceof HTMLElement)) return;
-    // Only blur direct image/video content; leave iframes alone here
-    const media = wrap.querySelector('img, video');
+    // Blur direct image/video/iframe content
+    const media = wrap.querySelector('img, video, iframe');
     if (!media) return;
     if (!STATE.settings.blurMedia) return;
     if (wrap.classList.contains('edgg-spoiler-revealed')) return;
@@ -737,7 +737,7 @@
   function applySpoilersInRoot(root) {
     if (!STATE.settings.blurMedia) return;
     if (!root || !root.querySelectorAll) return;
-    const nodes = root.querySelectorAll('img.edgg-media, video.edgg-media');
+    const nodes = root.querySelectorAll('img.edgg-media, video.edgg-media, iframe.edgg-media');
     nodes.forEach((m) => {
       if (!(m instanceof HTMLElement)) return;
       // If already within an edgg-spoiler wrapper, skip
