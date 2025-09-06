@@ -9,6 +9,7 @@
       enableTwitch: true,
       renderOnHover: false,
       enableHoverPreview: true,
+      blurMedia: false,
     }
   };
   // Maintains a temporary stick-to-bottom intent after user clicks DGG's "More messages below"
@@ -295,22 +296,27 @@
               mediaHtml = wrap.outerHTML;
             }
 
-            bodyEl.innerHTML =
-              '<div class="edgg-tweet-header">' + (userName ? '<span class="edgg-tweet-user">' + escapeHtml(userName) + '</span>' : '') + '</div>' +
-              '<div class="edgg-tweet-text">' + textHtml + '</div>' +
-              mediaHtml +
-              '<div class="edgg-tweet-footer"><a href="' + a.href + '" target="_blank" rel="noopener noreferrer">Open on Twitter</a></div>';
+          bodyEl.innerHTML =
+            '<div class="edgg-tweet-header">' + (userName ? '<span class="edgg-tweet-user">' + escapeHtml(userName) + '</span>' : '') + '</div>' +
+            '<div class="edgg-tweet-text">' + textHtml + '</div>' +
+            mediaHtml +
+            '<div class="edgg-tweet-footer"><a href="' + a.href + '" target="_blank" rel="noopener noreferrer">Open on Twitter</a></div>';
 
-            // Keep bottom lock if images/videos load later
-            var scrollerX = getScrollContainer(card);
-            var imgsX = bodyEl.querySelectorAll('img,video');
-            for (var xi = 0; xi < imgsX.length; xi++) {
-              var elX = imgsX[xi];
-              var evName = elX.tagName === 'VIDEO' ? 'loadedmetadata' : 'load';
-              elX.addEventListener(evName, function(){ if (isAtBottom(scrollerX)) scrollToBottom(scrollerX); }, { once: true });
-            }
-            return;
+          // Keep bottom lock if images/videos load later
+          var scrollerX = getScrollContainer(card);
+          var imgsX = bodyEl.querySelectorAll('img,video');
+          for (var xi = 0; xi < imgsX.length; xi++) {
+            var elX = imgsX[xi];
+            var evName = elX.tagName === 'VIDEO' ? 'loadedmetadata' : 'load';
+            elX.addEventListener(evName, function(){ if (isAtBottom(scrollerX)) scrollToBottom(scrollerX); }, { once: true });
           }
+
+          // Apply spoiler overlays on tweet media if enabled
+          if (STATE.settings.blurMedia) {
+            try { applySpoilersInRoot(bodyEl); } catch (_) {}
+          }
+          return;
+        }
 
           // Preferred path: CDN JSON
           renderTweetInto(card, res.data, a.href);
@@ -521,6 +527,11 @@
         if (isAtBottom(scroller)) scrollToBottom(scroller);
       }, { once: true });
     }
+
+    // Apply spoiler overlays to tweet media if enabled
+    if (STATE.settings.blurMedia) {
+      try { applySpoilersInRoot(body); } catch (_) {}
+    }
   }
 
   function injectBelow(container, el, originUrl, desiredWidthPx) {
@@ -568,6 +579,11 @@
 
     // Maintain bottom lock only if we were at bottom or sticky when inserting
     maintainStickyAfterAppend(scroller, shouldStick, wrap);
+
+    // Apply spoiler/blur overlay for media if enabled
+    if (STATE.settings.blurMedia) {
+      try { applySpoilerIfNeeded(wrap); } catch (_) {}
+    }
   }
 
   function computeDesiredWidth(container) {
@@ -676,6 +692,94 @@
       const sr = isDoc ? { top: 0, bottom: window.innerHeight, left: 0, right: window.innerWidth } : scroller.getBoundingClientRect();
       return (er.bottom > sr.top + threshold) && (er.top < sr.bottom - threshold);
     } catch (_) { return false; }
+  }
+
+  // ---- Spoiler overlay helpers ----
+  function applySpoilerIfNeeded(wrap) {
+    if (!wrap || !(wrap instanceof HTMLElement)) return;
+    // Only blur direct image/video content; leave iframes alone here
+    const media = wrap.querySelector('img, video');
+    if (!media) return;
+    if (!STATE.settings.blurMedia) return;
+    if (wrap.classList.contains('edgg-spoiler-revealed')) return;
+    if (wrap.querySelector('.edgg-spoiler-cover')) return;
+
+    wrap.classList.add('edgg-spoiler');
+
+    // Blur the media element
+    media.classList.add('edgg-spoiler-blur');
+
+    // Overlay cover
+    const cover = document.createElement('div');
+    cover.className = 'edgg-spoiler-cover';
+    cover.setAttribute('role', 'button');
+    cover.setAttribute('tabindex', '0');
+    cover.setAttribute('aria-label', 'Reveal media');
+    const txt = document.createElement('div');
+    txt.className = 'edgg-spoiler-text';
+    txt.textContent = 'Spoiler — click to reveal';
+    cover.appendChild(txt);
+    wrap.appendChild(cover);
+
+    const reveal = () => {
+      media.classList.remove('edgg-spoiler-blur');
+      wrap.classList.remove('edgg-spoiler');
+      wrap.classList.add('edgg-spoiler-revealed');
+      if (cover && cover.parentNode) cover.parentNode.removeChild(cover);
+    };
+
+    cover.addEventListener('click', (ev) => { ev.preventDefault(); ev.stopPropagation(); reveal(); }, true);
+    cover.addEventListener('keydown', (ev) => {
+      if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); ev.stopPropagation(); reveal(); }
+    }, true);
+  }
+
+  function applySpoilersInRoot(root) {
+    if (!STATE.settings.blurMedia) return;
+    if (!root || !root.querySelectorAll) return;
+    const nodes = root.querySelectorAll('img.edgg-media, video.edgg-media');
+    nodes.forEach((m) => {
+      if (!(m instanceof HTMLElement)) return;
+      // If already within an edgg-spoiler wrapper, skip
+      if (m.closest('.edgg-spoiler-revealed') || m.closest('.edgg-spoiler-cover')) return;
+      let parent = m.parentElement;
+      if (!parent) return;
+
+      // If the immediate parent is a single-media container (like our wrap), use overlay approach
+      if (parent.classList && parent.classList.contains('edgg-wrap')) {
+        applySpoilerIfNeeded(parent);
+        return;
+      }
+
+      // Otherwise, create a per-media spoiler wrapper
+      const holder = document.createElement('div');
+      holder.className = 'edgg-spoiler';
+      holder.style.position = 'relative';
+      parent.insertBefore(holder, m);
+      holder.appendChild(m);
+      m.classList.add('edgg-spoiler-blur');
+
+      const cover = document.createElement('div');
+      cover.className = 'edgg-spoiler-cover';
+      cover.setAttribute('role', 'button');
+      cover.setAttribute('tabindex', '0');
+      cover.setAttribute('aria-label', 'Reveal media');
+      const txt = document.createElement('div');
+      txt.className = 'edgg-spoiler-text';
+      txt.textContent = 'Spoiler — click to reveal';
+      cover.appendChild(txt);
+      holder.appendChild(cover);
+
+      const reveal = () => {
+        m.classList.remove('edgg-spoiler-blur');
+        holder.classList.add('edgg-spoiler-revealed');
+        if (cover && cover.parentNode) cover.parentNode.removeChild(cover);
+      };
+      cover.addEventListener('click', (ev) => { ev.preventDefault(); ev.stopPropagation(); reveal(); }, true);
+      cover.addEventListener('keydown', (ev) => {
+        if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); ev.stopPropagation(); reveal(); }
+      }, true);
+    });
   }
   function maintainStickyAfterAppend(scroller, shouldStick, rootEl) {
     if (!shouldStick) return;

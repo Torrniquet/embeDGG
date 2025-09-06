@@ -1,7 +1,7 @@
 
 const el = (id) => document.getElementById(id);
 
-const keys = ["enableTweets","enableMedia","enableYouTube","enableTwitch","renderOnHover","enableHoverPreview"];
+const keys = ["enableTweets","enableMedia","enableYouTube","enableTwitch","renderOnHover","enableHoverPreview","blurMedia"];
 
 async function load() {
   const res = await chrome.runtime.sendMessage({ type: "getSettings" });

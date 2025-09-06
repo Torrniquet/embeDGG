@@ -6,7 +6,8 @@ const DEFAULTS = {
   enableYouTube: true,
   enableTwitch: true,
   renderOnHover: false, // default: no hover required,
-  enableHoverPreview: true
+  enableHoverPreview: true,
+  blurMedia: false
 };
 
 // Initialize defaults on install
