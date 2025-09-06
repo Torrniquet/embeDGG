@@ -180,6 +180,14 @@
   border-radius: 16px;
   font-size: 12px;
 }
+.edgg-spoiler .edgg-spoiler-icon {
+  margin-right: 6px;
+  font-size: 14px;
+  line-height: 1;
+}
+.edgg-spoiler .edgg-spoiler-cover:hover {
+  background: rgba(0,0,0,0.50);
+}
 .edgg-spoiler .edgg-spoiler-blur {
   filter: blur(14px) saturate(0.6);
   transition: filter 120ms ease;

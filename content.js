@@ -717,8 +717,14 @@
     cover.setAttribute('aria-label', 'Reveal media');
     const txt = document.createElement('div');
     txt.className = 'edgg-spoiler-text';
-    txt.textContent = 'Spoiler — click to reveal';
+    const icon = document.createElement('span');
+    icon.className = 'edgg-spoiler-icon';
+    icon.setAttribute('aria-hidden', 'true');
+    icon.textContent = '👁️';
+    txt.appendChild(icon);
+    txt.appendChild(document.createTextNode('Spoiler — click to reveal'));
     cover.appendChild(txt);
+    cover.title = 'Sensitive media — click to reveal';
     wrap.appendChild(cover);
 
     const reveal = () => {
@@ -766,8 +772,14 @@
       cover.setAttribute('aria-label', 'Reveal media');
       const txt = document.createElement('div');
       txt.className = 'edgg-spoiler-text';
-      txt.textContent = 'Spoiler — click to reveal';
+      const icon = document.createElement('span');
+      icon.className = 'edgg-spoiler-icon';
+      icon.setAttribute('aria-hidden', 'true');
+      icon.textContent = '👁️';
+      txt.appendChild(icon);
+      txt.appendChild(document.createTextNode('Spoiler — click to reveal'));
       cover.appendChild(txt);
+      cover.title = 'Sensitive media — click to reveal';
       holder.appendChild(cover);
 
       const reveal = () => {
