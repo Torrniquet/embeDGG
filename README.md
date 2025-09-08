@@ -15,6 +15,7 @@ A Chrome MV3 extension that injects lightweight embeds under messages in **https
 - Injects directly beneath the message node. Width = message container width minus username gutter (best effort), max 566px.
 - Only active on the embed chat page. Heuristic to skip if not logged-in.
 - Setting to avoid auto-embedding by using a spoiler/preview that requires a click to reveal link embed contents (NSFW/NSFL handling).
+- Metal Pipe Protection
 
 
 ## Chrome Extension Settings:
