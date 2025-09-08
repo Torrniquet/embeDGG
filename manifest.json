@@ -1,0 +1,100 @@
+{
+  "manifest_version": 3,
+  "name": "embeDGG",
+  "version": "0.1.0",
+  "description": "Lightweight embeds for tweets and media in destiny.gg embed chat.",
+  "author": "Torrniquet",
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "embeDGG"
+  },
+  "permissions": [
+    "storage",
+    "scripting"
+  ],
+  "host_permissions": [
+    "https://destiny.gg/embed/chat*",
+    "https://www.destiny.gg/embed/chat*",
+    "https://twitter.com/*",
+    "https://www.twitter.com/*",
+    "https://pic.twitter.com/*",
+    "https://www.pic.twitter.com/*",
+    "https://x.com/*",
+    "https://t.co/*",
+    "https://video.twimg.com/*",
+    "https://pbs.twimg.com/*",
+    "https://nitter.net/*",
+    "https://fxtwitter.com/*",
+    "https://vxtwitter.com/*",
+    "https://api.vxtwitter.com/*",
+    "https://cdn.syndication.twimg.com/*",
+    "https://imgur.com/*",
+    "https://i.imgur.com/*",
+    "https://i.kym-cdn.com/*",
+    "https://flickr.com/*",
+    "https://www.flickr.com/*",
+    "https://youtube.com/*",
+    "https://www.youtube.com/*",
+    "https://youtu.be/*",
+    "https://www.youtu.be/*",
+    "https://vimeo.com/*",
+    "https://instagram.com/*",
+    "https://www.instagram.com/*",
+    "https://ddinstagram.com/*",
+    "https://www.ddinstagram.com/*",
+    "https://*.cdninstagram.com/*",
+    "https://giphy.com/*",
+    "https://media.giphy.com/*",
+    "https://tenor.com/*",
+    "https://media.tenor.com/*",
+    "https://streamable.com/*",
+    "https://dropbox.com/*",
+    "https://*.dropboxusercontent.com/*",
+    "https://onedrive.live.com/*",
+    "https://photos.google.com/*",
+    "https://lh3.googleusercontent.com/*",
+    "https://icloud.com/*",
+    "https://res.cloudinary.com/*",
+    "https://s3.amazonaws.com/*",
+    "https://cdn.discordapp.com/*",
+    "https://i.4cdn.org/*",
+    "https://kick.com/*",
+    "https://twitch.tv/*",
+    "https://www.twitch.tv/*",
+    "https://files.catbox.moe/*",
+    "https://www.files.catbox.moe/*",
+    "https://destiny.gg/bigscreen*",
+    "https://www.destiny.gg/bigscreen*",
+    "https://packaged-media.redd.it",
+    "https://www.packaged-media.redd.it",
+    "https://reddit.com/*",
+    "https://www.reddit.com/*",
+    "https://i.redd.it",
+    "https://www.i.redd.it",
+    "https://v.redd.it/*",
+    "https://cdn.syndication.twimg.com/*",
+    "https://www.cdn.syndication.twimg.com/*",
+    "https://publish.twitter.com/*",
+    "https://www.publish.twitter.com/*"
+  ],
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://www.destiny.gg/embed/chat*"
+      ],
+      "js": [
+        "content.js"
+      ],
+      "css": [
+        "styles.css"
+      ],
+      "run_at": "document_end"
+    }
+  ],
+  "icons": {},
+  "minimum_chrome_version": "110"
+}
