@@ -37,6 +37,7 @@ A Chrome MV3 extension that injects lightweight embeds under messages in **https
 1. Open https://www.destiny.gg/bigscreen or https://www.destiny.gg/embed/chat
 2. Run the following code in the Google Chrome WebDev Tools console to see some examples of different types of embeds:
 
+```
     function testEmbedLinks() {
         const exampleEmbedLinks = [
             'https://files.catbox.moe/d97241.mp4',
@@ -47,7 +48,6 @@ A Chrome MV3 extension that injects lightweight embeds under messages in **https
             'https://kick.com/xqc',
             'https://www.instagram.com/reels/DL7Hc8JuLuP',
         ];
-
         exampleEmbedLinks.forEach(linkUrl => {
             let msg = '<div class="msg-chat msg-user subscriber " data-username="embeDGG TEST MESSAGE" data-mentioned="routey">';
             msg += '<time class="time" title="" data-unixtimestamp="">00:00</time>';
@@ -66,3 +66,4 @@ A Chrome MV3 extension that injects lightweight embeds under messages in **https
     };
 
     testEmbedLinks();
+```
