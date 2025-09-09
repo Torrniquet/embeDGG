@@ -1,4 +1,4 @@
-# embeDGG (MVP)
+# embeDGG
 
 A Chrome MV3 extension that injects lightweight embeds under messages in **https://www.destiny.gg/embed/chat**.
 
