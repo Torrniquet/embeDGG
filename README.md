@@ -1,12 +1,10 @@
-# embeDGG (MVP)
+# embeDGG
 
 A Chrome MV3 extension that injects lightweight embeds under messages in **https://www.destiny.gg/embed/chat**.
 
-:-------------------------:|:-------------------------:
-![Preview/Spoiler Filter](images/tweet_preview.png) | ![Basic Tweets](images/tweet_basic.png)
-![Tweets (Image/Video)](images/tweet_attachment.png) | ![Twitch Streams](images/twitch_stream.png)
-![Instagram Reels](images/instagram_reels.png) | ![Chrome Extension Settings(images/extension_settings.png)
-:-------------------------:|:-------------------------:
+
+![Tweets (Image/Video)](images/tweet_attachment.png) ![Twitch Streams](images/twitch_stream.png)
+![Basic Tweets](images/tweet_basic.png) ![Instagram Reels](images/instagram_reels.png)
 
 
 ## Features
@@ -16,6 +14,17 @@ A Chrome MV3 extension that injects lightweight embeds under messages in **https
 - Settings sync via `chrome.storage.sync`; popup UI with real-time toggles.
 - Injects directly beneath the message node. Width = message container width minus username gutter (best effort), max 566px.
 - Only active on the embed chat page. Heuristic to skip if not logged-in.
+- Setting to avoid auto-embedding by using a spoiler/preview that requires a click to reveal link embed contents (NSFW/NSFL handling).
+- Metal Pipe Protection
+
+
+## Chrome Extension Settings:
+![Chrome Extension Settings](images/extension_settings.png)
+
+
+## Preview/Spoiler Filter:
+![Preview/Spoiler Filter](images/tweet_preview.png)
+
 
 ## To Do
 - Fix some YouTube embeds.
@@ -27,11 +36,13 @@ A Chrome MV3 extension that injects lightweight embeds under messages in **https
 - Cleanup any deprecated/redundant code.
 - Not adding TikTok (Chinese spy operation).
 
+
 ## Install (Developer Mode)
 1. Unzip this folder anywhere (suggested: `/Users/torrniquet/Development/Project/embeDGG`).
 2. In Chrome: `chrome://extensions` → toggle **Developer mode**.
 3. Click **Load unpacked** → select the folder.
 4. Open https://www.destiny.gg/embed/chat and test.
+
 
 ## Notes / Roadmap
 - **Tweet rendering** is a minimal placeholder in MVP. Next step: background fetch from `fxtwitter.com` (or similar) to hydrate tweet text and media (respecting the whitelist) and render without iframes.
