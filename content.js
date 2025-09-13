@@ -18,6 +18,11 @@
   };
   // Maintains a temporary stick-to-bottom intent after user clicks DGG's "More messages below"
   STATE.stickyWanted = false; // when true, embeds will force-scroll to bottom even if height grows
+  
+  // Auto-scroll fix: Prevents scroll handler from updating stickyWanted during embed insertion.
+  // When embeds are added to the DOM, they can cause temporary scroll position changes that
+  // would incorrectly disable auto-scroll even when the user was at the bottom.
+  STATE.insertingEmbed = false;
 
   const MEDIA_EXT = /\.(png|jpe?g|gif|webp|mp4|webm|mov)$/i;
   const MEDIA_WHITELIST = new Set([
@@ -166,7 +171,13 @@
 
     // Keep STATE.stickyWanted in sync with user scroll position
     const onScroll = () => {
-      try { STATE.stickyWanted = isAtBottom(scroller); } catch (_) {}
+      try { 
+        // Auto-scroll fix: Skip updating stickyWanted during embed insertion to prevent
+        // temporary scroll position changes from disabling auto-scroll
+        if (!STATE.insertingEmbed) {
+          STATE.stickyWanted = isAtBottom(scroller); 
+        }
+      } catch (_) {}
     };
     scroller.addEventListener('scroll', onScroll, { passive: true });
     onScroll();
@@ -313,8 +324,8 @@
         const scroller = getScrollContainer(container);
         const linkInView = isElementInView(container, scroller);
         const shouldStick = linkInView && (STATE.stickyWanted || isAtBottom(scroller, 2));
-        container.appendChild(wrap);
-        maintainStickyAfterAppend(scroller, shouldStick, wrap);
+        // Auto-scroll fix: Use safeAppendEmbed instead of direct appendChild to preserve sticky state
+        safeAppendEmbed(container, wrap, scroller, shouldStick);
         try { retargetLinks(wrap); } catch (_) {}
 
         // Fetch page metadata from Twitch channel URL for thumbnail + title
@@ -628,8 +639,8 @@
           const scroller = getScrollContainer(container);
           const linkInView = isElementInView(container, scroller);
           const shouldStick = linkInView && (STATE.stickyWanted || isAtBottom(scroller, 2));
-          container.appendChild(wrap);
-          maintainStickyAfterAppend(scroller, shouldStick, wrap);
+          // Auto-scroll fix: Use safeAppendEmbed instead of direct appendChild to preserve sticky state
+          safeAppendEmbed(container, wrap, scroller, shouldStick);
           try { retargetLinks(wrap); } catch (_) {}
 
           // Fetch oEmbed via background to avoid CSP and attach title/thumbnail
@@ -692,8 +703,8 @@
           const scroller = getScrollContainer(container);
           const linkInView = isElementInView(container, scroller);
           const shouldStick = linkInView && (STATE.stickyWanted || isAtBottom(scroller, 2));
-          container.appendChild(wrap);
-          maintainStickyAfterAppend(scroller, shouldStick, wrap);
+          // Auto-scroll fix: Use safeAppendEmbed instead of direct appendChild to preserve sticky state
+          safeAppendEmbed(container, wrap, scroller, shouldStick);
           try { retargetLinks(wrap); } catch (_) {}
 
           // Choose a URL to fetch for metadata
@@ -761,8 +772,8 @@
           const scroller = getScrollContainer(container);
           const linkInView = isElementInView(container, scroller);
           const shouldStick = linkInView && (STATE.stickyWanted || isAtBottom(scroller, 2));
-          container.appendChild(wrap);
-          maintainStickyAfterAppend(scroller, shouldStick, wrap);
+          // Auto-scroll fix: Use safeAppendEmbed instead of direct appendChild to preserve sticky state
+          safeAppendEmbed(container, wrap, scroller, shouldStick);
           try { retargetLinks(wrap); } catch (_) {}
 
           // Fetch page metadata (title + image). Prefer live title if detectable.
@@ -1381,16 +1392,14 @@
     }
 
     wrap.appendChild(el);
-    container.appendChild(wrap);
+    // Auto-scroll fix: Use safeAppendEmbed instead of direct appendChild to preserve sticky state
+    safeAppendEmbed(container, wrap, scroller, shouldStick);
 
     // Enforce target="_blank" for any anchors inside our wrapper
     try { retargetLinks(wrap); } catch (_) {}
 
     // Convert blocked cross-origin videos to blob: if needed (for CSP)
     try { ensureCspSafeVideos(wrap); } catch (_) {}
-
-    // Maintain bottom lock only if we were at bottom or sticky when inserting
-    maintainStickyAfterAppend(scroller, shouldStick, wrap);
 
     // Apply spoiler/blur overlay if enabled or sensitivity-tagged
     try { applySpoilerIfNeeded(wrap, sensitivityLabel, STATE.settings.blurMedia || !!sensitivityLabel); } catch (_) {}
@@ -1783,6 +1792,45 @@
       }, true);
     });
   }
+  /**
+   * Safely append an embed wrapper while preserving sticky scroll state.
+   * 
+   * Auto-scroll fix: When embeds are inserted into the DOM, they can cause temporary
+   * scroll position changes that trigger the scroll handler, which would incorrectly
+   * set STATE.stickyWanted to false even when the user was at the bottom of the chat.
+   * This function prevents that by temporarily disabling the scroll handler during
+   * embed insertion and preserving the original sticky state.
+   * 
+   * @param {Element} container - The chat message container to append to
+   * @param {Element} wrap - The embed wrapper element to append
+   * @param {Element} scroller - The scrollable container element
+   * @param {boolean} shouldStick - Whether auto-scroll should be maintained
+   */
+  function safeAppendEmbed(container, wrap, scroller, shouldStick) {
+    // Save the current sticky state before insertion
+    const wasStickyWanted = STATE.stickyWanted;
+    
+    // Temporarily disable scroll handler to prevent it from updating stickyWanted
+    STATE.insertingEmbed = true;
+    
+    try {
+      // Insert the embed into the DOM
+      container.appendChild(wrap);
+    } finally {
+      // Re-enable scroll handler
+      STATE.insertingEmbed = false;
+      
+      // Restore stickyWanted if it was true before insertion - this prevents
+      // the temporary scroll position changes from disabling auto-scroll
+      if (wasStickyWanted) {
+        STATE.stickyWanted = true;
+      }
+    }
+    
+    // Handle maintaining scroll position as embed content loads
+    maintainStickyAfterAppend(scroller, shouldStick, wrap);
+  }
+  
   /**
    * If the user intends to be at the bottom, preserve bottom positioning while
    * async media load and resize events occur.

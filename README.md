@@ -1,14 +1,13 @@
-
 # embeDGG (MVP)
 
 A Chrome MV3 extension that injects lightweight embeds under messages in **https://www.destiny.gg/embed/chat**.
 
-![Twitch Streams](images/twitch_stream.png) 
-![Preview/Spoiler Filter](images/tweet_preview.png) 
-![Basic Tweets](images/tweet_basic.png) 
-![Tweets (Image/Video)](images/tweet_attachment.png) 
-![Instagram Reels](images/instagram_reels.png) 
-![Chrome Extension Settings(images/extension_settings.png)
+:-------------------------:|:-------------------------:
+![Preview/Spoiler Filter](images/tweet_preview.png) | ![Basic Tweets](images/tweet_basic.png)
+![Tweets (Image/Video)](images/tweet_attachment.png) | ![Twitch Streams](images/twitch_stream.png)
+![Instagram Reels](images/instagram_reels.png) | ![Chrome Extension Settings(images/extension_settings.png)
+:-------------------------:|:-------------------------:
+
 
 ## Features
 - Real-time parsing of new chat messages; retroactive parsing when a message scrolls into view.
