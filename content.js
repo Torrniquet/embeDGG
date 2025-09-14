@@ -56,16 +56,19 @@
     } catch { return false; }
   }
 
-  // ---- Messaging safety helpers ----
+  // ---- Cross-browser compatibility and messaging safety helpers ----
+  // Cross-browser compatibility: Firefox uses 'browser' namespace, Chrome uses 'chrome'
+  const api = typeof browser !== 'undefined' ? browser : chrome;
+  
   function isExtAlive() {
-    try { return typeof chrome !== 'undefined' && !!(chrome.runtime && chrome.runtime.id); } catch (_) { return false; }
+    try { return typeof api !== 'undefined' && !!(api.runtime && api.runtime.id); } catch (_) { return false; }
   }
   function safeSendMessage(msg, cb) {
     if (!isExtAlive()) { try { cb && cb(null); } catch (_) {} return; }
     try {
-      chrome.runtime.sendMessage(msg, (res) => {
+      api.runtime.sendMessage(msg, (res) => {
         // Swallow runtime errors like "Extension context invalidated"
-        if (chrome && chrome.runtime && chrome.runtime.lastError) { try { cb && cb(null); } catch (_) {} return; }
+        if (api && api.runtime && api.runtime.lastError) { try { cb && cb(null); } catch (_) {} return; }
         try { cb && cb(res); } catch (_) {}
       });
     } catch (_) { try { cb && cb(null); } catch (_) {} }
@@ -78,7 +81,7 @@
   });
 
   // Update-on-change (apply for new messages only)
-  chrome.runtime.onMessage.addListener((msg) => {
+  api.runtime.onMessage.addListener((msg) => {
     if (msg && msg.type === "settingsUpdated") {
       safeSendMessage({ type: "getSettings" }, (res) => {
         if (res && res.ok) STATE.settings = { ...STATE.settings, ...res.settings };

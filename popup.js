@@ -23,9 +23,12 @@ const keys = [
   "blurMedia"
 ];
 
+// Cross-browser API alias (Firefox uses `browser`, Chrome uses `chrome`).
+const api = typeof browser !== 'undefined' ? browser : chrome;
+
 // Load current settings and reflect them in the popup controls.
 async function load() {
-  const res = await chrome.runtime.sendMessage({ type: "getSettings" });
+  const res = await api.runtime.sendMessage({ type: "getSettings" });
   if (res?.ok) {
     const s = res.settings;
     keys.forEach(k => { if (el(k)) el(k).checked = !!s[k]; });
@@ -36,7 +39,7 @@ async function load() {
 async function onToggle(k) {
   const settings = {};
   settings[k] = el(k).checked;
-  await chrome.runtime.sendMessage({ type: "setSettings", settings });
+  await api.runtime.sendMessage({ type: "setSettings", settings });
 }
 
 // Wire up a single delegated change listener so we don't need one per control.
