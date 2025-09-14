@@ -16,6 +16,9 @@
  * User‑visible feature toggles with their default values. We merge these with
  * anything the user already has saved in chrome.storage on install.
  */
+
+// Cross-browser compatibility: Firefox uses 'browser' namespace, Chrome uses 'chrome'
+const api = typeof browser !== 'undefined' ? browser : chrome;
 const DEFAULTS = {
   enableTweets: true,
   enableMedia: true,
@@ -28,28 +31,49 @@ const DEFAULTS = {
 
 // Initialize defaults on install
 // Seed settings on first install (or keep existing on update).
-chrome.runtime.onInstalled.addListener(async () => {
-  const current = await chrome.storage.sync.get();
-  await chrome.storage.sync.set({ ...DEFAULTS, ...current });
+api.runtime.onInstalled.addListener(async () => {
+  const current = await api.storage.sync.get();
+  await api.storage.sync.set({ ...DEFAULTS, ...current });
 });
 
 // Utility: simple domain whitelist (exact host or suffix match where specified)
 // Minimal allowlist for background fetches. This is intentionally smaller than
 // the content script's, and only includes hosts where we actually need the
 // background to fetch (because of page CSP and/or CORS restrictions).
+// Only hosts actually fetched via bgFetch (keep tight). For tweet resolution, the
+// background fetchTweet handler does its own cross-origin fetches and does not
+// consult this whitelist.
 const MEDIA_WHITELIST = new Set([
-  "imgur.com","i.imgur.com","flickr.com","www.flickr.com","youtube.com","www.youtube.com",
-  "youtu.be","vimeo.com","instagram.com","www.instagram.com","ddinstagram.com",
-  "www.ddinstagram.com","giphy.com","media.giphy.com","tenor.com","media.tenor.com",
+  // YouTube watch page probe (live thumb detection)
+  "youtube.com","www.youtube.com","youtu.be",
+
+  // Twitch metadata (channel/VOD overlays)
+  "twitch.tv","www.twitch.tv",
+
+  // T.co shortlink expansion
+  "t.co",
+
+  // Imgur page resolution (og:image/og:video)
+  "imgur.com","i.imgur.com",
+
+  // Instagram post/reel resolution and ddinstagram mirror
+  "instagram.com","www.instagram.com","ddinstagram.com","www.ddinstagram.com",
+
+  // Kick metadata
+  "kick.com",
+
+  // Reddit post JSON for embeds
+  "reddit.com","www.reddit.com",
+
+  // Optional: media CDNs encountered in other resolvers
+  "giphy.com","media.giphy.com","tenor.com","media.tenor.com",
   "streamable.com","dropbox.com","onedrive.live.com","photos.google.com",
   "lh3.googleusercontent.com","icloud.com","res.cloudinary.com","s3.amazonaws.com",
-  "cdn.discordapp.com","i.4cdn.org","kick.com","twitch.tv","www.twitch.tv",
-  "i.kym-cdn.com",
-  "twitter.com","x.com","t.co","fxtwitter.com","nitter.net"
+  "cdn.discordapp.com","i.4cdn.org","i.kym-cdn.com"
 ]);
 
 // Background fetch with CORS bypass (where allowed by host_permissions)
-chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
+api.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   // Generic background fetch for simple text/JSON pages the content script
   // wants to inspect (e.g., Imgur HTML to extract og:image).
   if (msg?.type === "bgFetch") {
@@ -75,7 +99,7 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   // Expose saved settings to the content script.
   if (msg?.type === "getSettings") {
     (async () => {
-      const cfg = await chrome.storage.sync.get();
+      const cfg = await api.storage.sync.get();
       sendResponse({ ok: true, settings: { ...DEFAULTS, ...cfg } });
     })();
     return true;
@@ -84,12 +108,12 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   // Persist changed settings and broadcast to all tabs so they can re‑read.
   if (msg?.type === "setSettings") {
     (async () => {
-      await chrome.storage.sync.set(msg.settings || {});
+      await api.storage.sync.set(msg.settings || {});
       // Broadcast to all tabs so content script can hot-apply new behavior for future messages
-      const tabs = await chrome.tabs.query({});
+      const tabs = await api.tabs.query({});
       for (const tab of tabs) {
         try {
-          if (tab.id) chrome.tabs.sendMessage(tab.id, { type: "settingsUpdated" });
+          if (tab.id) api.tabs.sendMessage(tab.id, { type: "settingsUpdated" });
         } catch {}
       }
       sendResponse({ ok: true });
