@@ -468,9 +468,6 @@
       try { retargetLinks(bodyEl); } catch (_) {}
       try { expandTcoLinksIn(bodyEl); } catch (_) {}
 
-      // Initialize pager if multiple media present
-      //try { initTweetMediaPager(bodyEl); } catch (_) {}
-
           // If oEmbed didn't expose direct pbs/video URLs, try a second pass via CDN JSON using a candidate tweet URL
           if (!mediaNodes.length && candidateTweetUrl) {
             safeSendMessage({ type: 'fetchTweet', url: candidateTweetUrl }, (res2) => {
@@ -496,6 +493,9 @@
 
           // Apply spoiler overlays if blur enabled or sensitivity flagged
           try { applySpoilersInRoot(bodyEl, sensitivity, STATE.settings.blurMedia || !!sensitivity); } catch (_) {}
+          
+          // Initialize pager if multiple media present (after spoiler setup)
+          try { initTweetMediaPager(bodyEl); } catch (_) {}
           return;
         }
 
@@ -1321,9 +1321,6 @@
         (created ? ' • <span class="edgg-tweet-date">' + escapeHtml(created) + '</span>' : '') +
       '</div>';
 
-    // Initialize pager if multiple media present
-    //try { initTweetMediaPager(body); } catch (_) {}
-
     // Ensure all links open in a new tab and expand t.co shortlinks inside text
     try { retargetLinks(body); } catch (_) {}
     try { expandTcoLinksIn(body); } catch (_) {}
@@ -1347,6 +1344,9 @@
       var label = wrap && wrap.getAttribute('data-edgg-sensitivity');
       applySpoilersInRoot(body, label, STATE.settings.blurMedia || !!label);
     } catch (_) {}
+    
+    // Initialize pager if multiple media present (after spoiler setup)
+    try { initTweetMediaPager(body); } catch (_) {}
   }
 
   /**
@@ -1676,6 +1676,44 @@
   }
 
   // ---- Spoiler overlay helpers ----
+  
+  /**
+   * Reveal all spoilers within the same tweet container when one is revealed.
+   * This ensures that clicking reveal on any image/video reveals all media in that tweet.
+   */
+  function revealAllInTweet(triggerElement) {
+    // Find the parent tweet media container
+    const tweetContainer = triggerElement.closest('.edgg-tweet-media');
+    if (!tweetContainer) return;
+    
+    // Find all spoiler elements within this tweet
+    const spoilers = tweetContainer.querySelectorAll('.edgg-spoiler:not(.edgg-spoiler-revealed)');
+    spoilers.forEach(spoiler => {
+      const media = spoiler.querySelector('img.edgg-media, video.edgg-media, iframe.edgg-media');
+      const cover = spoiler.querySelector('.edgg-spoiler-cover');
+      
+      if (media) {
+        media.classList.remove('edgg-spoiler-blur');
+        spoiler.classList.add('edgg-spoiler-revealed');
+        if (cover && cover.parentNode) cover.parentNode.removeChild(cover);
+      }
+    });
+    
+    // Also handle wrapper-style spoilers (for single media containers)
+    const wrapSpoilers = tweetContainer.querySelectorAll('.edgg-wrap.edgg-spoiler:not(.edgg-spoiler-revealed)');
+    wrapSpoilers.forEach(wrap => {
+      const media = wrap.querySelector('img.edgg-media, video.edgg-media, iframe.edgg-media');
+      const cover = wrap.querySelector('.edgg-spoiler-cover');
+      
+      if (media) {
+        media.classList.remove('edgg-spoiler-blur');
+        wrap.classList.remove('edgg-spoiler');
+        wrap.classList.add('edgg-spoiler-revealed');
+        if (cover && cover.parentNode) cover.parentNode.removeChild(cover);
+      }
+    });
+  }
+  
   // Detect NSFW/NSFL flag from the message element
   /**
    * Derive a sensitivity label (NSFW/NSFL) from the message text. Used to
@@ -1728,10 +1766,8 @@
     wrap.appendChild(cover);
 
     const reveal = () => {
-      media.classList.remove('edgg-spoiler-blur');
-      wrap.classList.remove('edgg-spoiler');
-      wrap.classList.add('edgg-spoiler-revealed');
-      if (cover && cover.parentNode) cover.parentNode.removeChild(cover);
+      // Reveal all spoilers in the same tweet instead of just this one
+      revealAllInTweet(media);
     };
 
     cover.addEventListener('click', (ev) => { ev.preventDefault(); ev.stopPropagation(); reveal(); }, true);
@@ -1789,9 +1825,9 @@
         holder.classList.add('edgg-spoiler-revealed');
         if (cover && cover.parentNode) cover.parentNode.removeChild(cover);
       };
-      cover.addEventListener('click', (ev) => { ev.preventDefault(); ev.stopPropagation(); reveal(); }, true);
+      cover.addEventListener('click', (ev) => { ev.preventDefault(); ev.stopPropagation(); revealAllInTweet(m); }, true);
       cover.addEventListener('keydown', (ev) => {
-        if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); ev.stopPropagation(); reveal(); }
+        if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); ev.stopPropagation(); revealAllInTweet(m); }
       }, true);
     });
   }
@@ -1967,8 +2003,6 @@
    * Initialize a simple pager on any `.edgg-tweet-media` container under `root`
    * that holds more than one media element. Shows one at a time with prev/next
    * buttons and a small counter. Idempotent per container.
-   * 
-   * *** DISABLED CURRENTLY ***
    */
   function initTweetMediaPager(root) {
     if (!root || !root.querySelectorAll) return;
@@ -1983,12 +2017,13 @@
         group.setAttribute('data-edgg-pager', '1');
         group.classList.add('edgg-pager');
         let idx = 0;
-
+        
         // Show only one item at a time
         const show = (i) => {
           if (!items || !items.length) return;
           const n = items.length;
-          idx = ((i % n) + n) % n; // wrap
+          // Clamp to valid range instead of wrapping
+          idx = Math.max(0, Math.min(i, n - 1));
           for (let k = 0; k < n; k++) {
             const el = items[k];
             const on = (k === idx);
@@ -2001,6 +2036,7 @@
             try { if (!on && el.tagName === 'VIDEO') el.pause(); } catch (_) {}
           }
           try { counter.textContent = (idx + 1) + ' / ' + n; } catch (_) {}
+          updateButtonVisibility();
         };
 
         // Prepare nav UI
@@ -2008,37 +2044,96 @@
         prev.className = 'edgg-pager-btn edgg-pager-prev';
         prev.setAttribute('aria-label', 'Previous media');
         prev.type = 'button';
+        prev.tabIndex = -1; // Prevent focus scrolling
         prev.textContent = '‹';
 
         const next = document.createElement('button');
         next.className = 'edgg-pager-btn edgg-pager-next';
         next.setAttribute('aria-label', 'Next media');
         next.type = 'button';
+        next.tabIndex = -1; // Prevent focus scrolling
         next.textContent = '›';
 
         const counter = document.createElement('div');
         counter.className = 'edgg-pager-counter';
 
-        prev.addEventListener('click', (ev) => { ev.preventDefault(); ev.stopPropagation(); show(idx - 1); }, true);
-        next.addEventListener('click', (ev) => { ev.preventDefault(); ev.stopPropagation(); show(idx + 1); }, true);
+        // Complete scroll position lock during pager operations
+        const safePageTo = (newIdx) => {
+          const scroller = getScrollContainer(group);
+          const wasInserting = STATE.insertingEmbed;
+          const wasStickyWanted = STATE.stickyWanted;
+          
+          // Capture current scroll position before any changes
+          const savedScrollTop = scroller.scrollTop;
+          
+          // Disable scroll monitoring completely
+          STATE.insertingEmbed = true;
+          
+          // Perform the page change
+          show(newIdx);
+          
+          // Immediately restore exact scroll position - no movement allowed
+          scroller.scrollTop = savedScrollTop;
+          
+          // Use requestAnimationFrame to handle any async height changes
+          requestAnimationFrame(() => {
+            scroller.scrollTop = savedScrollTop;
+            
+            // Double-check after another frame in case of delayed layout
+            requestAnimationFrame(() => {
+              scroller.scrollTop = savedScrollTop;
+              
+              // Restore state after position is locked
+              STATE.stickyWanted = wasStickyWanted;
+              STATE.insertingEmbed = wasInserting;
+            });
+          });
+        };
 
-        // Optional: click on media advances to next
+        prev.addEventListener('click', (ev) => { 
+          ev.preventDefault(); 
+          ev.stopPropagation(); 
+          ev.stopImmediatePropagation();
+          safePageTo(idx - 1);
+        }, true);
+        
+        next.addEventListener('click', (ev) => { 
+          ev.preventDefault(); 
+          ev.stopPropagation(); 
+          ev.stopImmediatePropagation();
+          safePageTo(idx + 1);
+        }, true);
+
+        // Optional: click on media advances to next (if not at end)
         items.forEach((el) => {
           el.addEventListener('click', (ev) => {
             // don't hijack clicks on embedded controls (e.g., video controls)
             if (el.tagName === 'VIDEO') return;
-            show(idx + 1);
+            // Only advance if not at the last item
+            if (idx < items.length - 1) {
+              ev.preventDefault();
+              ev.stopPropagation();
+              safePageTo(idx + 1);
+            }
           }, true);
         });
 
         group.appendChild(prev);
         group.appendChild(next);
         group.appendChild(counter);
+        
+        // Smart pager button visibility based on position
+        const updateButtonVisibility = () => {
+          const n = items.length;
+          prev.style.display = (idx > 0) ? 'block' : 'none';
+          next.style.display = (idx < n - 1) ? 'block' : 'none';
+          counter.style.display = 'block';
+        };
 
         // Ensure CSP handling for any videos inside
         try { ensureCspSafeVideos(group); } catch (_) {}
 
-        // Initial layout
+        // Initial layout - show first item and set up button visibility
         show(0);
       } catch (_) {}
     });
