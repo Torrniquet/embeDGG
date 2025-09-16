@@ -1684,7 +1684,32 @@
   function revealAllInTweet(triggerElement) {
     // Find the parent tweet media container
     const tweetContainer = triggerElement.closest('.edgg-tweet-media');
-    if (!tweetContainer) return;
+    if (!tweetContainer) {
+      // Not in a tweet - handle individual reveal for regular embedded media
+      const spoilerElement = triggerElement.closest('.edgg-spoiler');
+      const wrapSpoiler = triggerElement.closest('.edgg-wrap.edgg-spoiler');
+      
+      if (wrapSpoiler) {
+        // Handle wrapper-style spoiler
+        const media = wrapSpoiler.querySelector('img.edgg-media, video.edgg-media, iframe.edgg-media');
+        const cover = wrapSpoiler.querySelector('.edgg-spoiler-cover');
+        if (media) {
+          media.classList.remove('edgg-spoiler-blur');
+          wrapSpoiler.classList.add('edgg-spoiler-revealed');
+          if (cover && cover.parentNode) cover.parentNode.removeChild(cover);
+        }
+      } else if (spoilerElement) {
+        // Handle individual spoiler wrapper
+        const media = spoilerElement.querySelector('img.edgg-media, video.edgg-media, iframe.edgg-media');
+        const cover = spoilerElement.querySelector('.edgg-spoiler-cover');
+        if (media) {
+          media.classList.remove('edgg-spoiler-blur');
+          spoilerElement.classList.add('edgg-spoiler-revealed');
+          if (cover && cover.parentNode) cover.parentNode.removeChild(cover);
+        }
+      }
+      return;
+    }
     
     // Find all spoiler elements within this tweet
     const spoilers = tweetContainer.querySelectorAll('.edgg-spoiler:not(.edgg-spoiler-revealed)');
