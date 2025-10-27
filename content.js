@@ -216,6 +216,11 @@
     mo2.observe(document.body || document.documentElement, { childList: true, subtree: true });
   }
 
+  /** Return true when node lives inside the pinned chat container. */
+  function isPinnedMessageNode(el) {
+    return !!(el && el.closest && el.closest('#chat-pinned-message'));
+  }
+
   /**
    * Scan a newly added (or just‑scrolled‑into‑view) message element and try
    * embedding any supported links inside it.
@@ -224,6 +229,7 @@
     // Ignore our injected UI
     if (!el || (el.classList && el.classList.contains('edgg-wrap'))) return;
     if (el.closest && el.closest('.edgg-wrap')) return;
+    if (isPinnedMessageNode(el)) return;
     // Expect messages to contain anchor tags. If none, skip.
     const anchors = el.querySelectorAll ? el.querySelectorAll("a[href]") : [];
     if (!anchors.length) return;
@@ -251,6 +257,7 @@
    * to render (tweet card, direct image/video, YouTube/Twitch card, etc.).
    */
   function tryEmbed(a, container) {
+    if (isPinnedMessageNode(container) || isPinnedMessageNode(a)) return;
     const url = new URL(a.href, location.href);
     const host = url.hostname;
     const sensitivity = getSensitivityLabel(container);
