@@ -1,6 +1,6 @@
 # embeDGG
 
-A Chrome MV3 extension that injects lightweight embeds under messages in **https://www.destiny.gg/embed/chat**.
+A Chrome MV3 extension that injects lightweight embeds under messages in DGG.
 
 
 ![Tweets (Image/Video)](images/tweet_attachment.png) ![Twitch Streams](images/twitch_stream.png)
