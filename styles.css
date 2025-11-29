@@ -263,3 +263,44 @@
   color: #fff;
   z-index: 3;
 }
+
+/* Chat tools NSFW toggle */
+.edgg-nsfw-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 6px;
+  border: none;
+  background: transparent;
+  color: rgba(157, 163, 173, 0.9);
+  font-size: 14px;
+  letter-spacing: 0;
+  text-transform: none;
+  cursor: pointer;
+  padding: 0;
+  position: relative;
+  overflow: hidden;
+  transition: color 120ms ease;
+  font-family: inherit;
+}
+.edgg-nsfw-toggle:focus-visible {
+  outline: 2px solid rgba(255,255,255,0.9);
+  outline-offset: 2px;
+}
+.edgg-nsfw-toggle:active {
+  transform: scale(0.96);
+}
+.edgg-nsfw-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.edgg-nsfw-icon svg {
+  width: 24px;
+  height: 24px;
+}
+.edgg-nsfw-toggle--active {
+  color: rgba(255,70,70,0.95);
+}

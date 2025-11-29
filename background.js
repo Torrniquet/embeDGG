@@ -69,7 +69,7 @@ const MEDIA_WHITELIST = new Set([
   "giphy.com","media.giphy.com","tenor.com","media.tenor.com",
   "streamable.com","dropbox.com","onedrive.live.com","photos.google.com",
   "lh3.googleusercontent.com","icloud.com","res.cloudinary.com","s3.amazonaws.com",
-  "cdn.discordapp.com","i.4cdn.org","i.kym-cdn.com"
+  "cdn.discordapp.com","i.4cdn.org","i.kym-cdn.com","video.twimg.com"
 ]);
 
 // Background fetch with CORS bypass (where allowed by host_permissions)
