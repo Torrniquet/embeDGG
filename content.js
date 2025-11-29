@@ -74,9 +74,76 @@
     } catch (_) { try { cb && cb(null); } catch (_) {} }
   }
 
+
+  const NSFW_TOGGLE_ID = 'edgg-nsfw-toggle';
+
+  function isSupportedDggContext() {
+    try {
+      const hostOk = /(^|\.)destiny\.gg$/i.test(location.hostname);
+      if (!hostOk) return false;
+      const path = location.pathname || '';
+      // Limit to the chat embed itself; bigscreen support comes via the iframe that loads this URL.
+      return path.startsWith('/embed/chat');
+    } catch (_) { return false; }
+  }
+
+  function createNsfwToggleButton() {
+    const btn = document.createElement('button');
+    btn.id = NSFW_TOGGLE_ID;
+    btn.type = 'button';
+    btn.className = 'edgg-nsfw-toggle';
+    btn.setAttribute('aria-label', 'Toggle NSFW blur');
+    const icon = document.createElement('span');
+    icon.className = 'edgg-nsfw-icon';
+    icon.innerHTML = `
+      <svg width="24" height="24" viewBox="0 0 28 28" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <circle cx="14" cy="14" r="12" stroke="currentColor" stroke-width="2" fill="none" />
+        <line x1="7" y1="21" x2="21" y2="7" stroke="currentColor" stroke-width="2" />
+        <text x="14" y="17" text-anchor="middle" font-family="Arial, sans-serif" font-size="9" font-weight="bold" fill="currentColor">NSFW</text>
+      </svg>
+    `;
+    btn.appendChild(icon);
+    btn.addEventListener('click', (ev) => {
+      ev.preventDefault();
+      ev.stopPropagation();
+      toggleNsfwBlur();
+    }, true);
+    return btn;
+  }
+
+  function toggleNsfwBlur() {
+    const next = !STATE.settings.blurMedia;
+    STATE.settings.blurMedia = next;
+    updateNsfwButtonState();
+    safeSendMessage({ type: 'setSettings', settings: { blurMedia: next } });
+  }
+
+  function updateNsfwButtonState() {
+    const btn = document.getElementById(NSFW_TOGGLE_ID);
+    if (!btn) return;
+    const active = !!STATE.settings.blurMedia;
+    btn.classList.toggle('edgg-nsfw-toggle--active', active);
+    btn.setAttribute('aria-pressed', active ? 'true' : 'false');
+    btn.title = active ? 'NSFW blur is ON' : 'NSFW blur is OFF';
+  }
+
+  function ensureNsfwToggleButton() {
+    if (document.getElementById(NSFW_TOGGLE_ID)) return;
+    const sendBtn = document.getElementById('send-anyway-btn');
+    if (!sendBtn || !sendBtn.parentElement) {
+      requestAnimationFrame(ensureNsfwToggleButton);
+      return;
+    }
+    try {
+      sendBtn.parentElement.insertBefore(createNsfwToggleButton(), sendBtn);
+    } catch (_) {}
+    updateNsfwButtonState();
+  }
+
   // Fetch settings from background (safe)
   safeSendMessage({ type: "getSettings" }, (res) => {
     if (res && res.ok) STATE.settings = { ...STATE.settings, ...res.settings };
+    updateNsfwButtonState();
     init();
   });
 
@@ -85,6 +152,7 @@
     if (msg && msg.type === "settingsUpdated") {
       safeSendMessage({ type: "getSettings" }, (res) => {
         if (res && res.ok) STATE.settings = { ...STATE.settings, ...res.settings };
+        updateNsfwButtonState();
       });
     }
   });
@@ -95,10 +163,12 @@
    * @returns {void}
    */
   function init() {
-    if (!location.href.startsWith("https://www.destiny.gg/embed/chat")) return;
+    if (!isSupportedDggContext()) return;
 
     const chatRoot = document.body;
     if (!chatRoot) return;
+
+    ensureNsfwToggleButton();
 
     // Live stream of message nodes: observe additions
     const mo = new MutationObserver((muts) => {
@@ -440,10 +510,15 @@
                     vid.controls = true; // require interaction
                     vid.preload = 'metadata';
                     vid.playsInline = true;
-                    var srcEl = document.createElement('source');
-                    srcEl.src = eu.href;
-                    srcEl.type = 'video/mp4';
-                    vid.appendChild(srcEl);
+                    const blocked = isCspBlockedHost(h);
+                    if (!blocked) {
+                      var srcEl = document.createElement('source');
+                      srcEl.src = eu.href;
+                      srcEl.type = 'video/mp4';
+                      vid.appendChild(srcEl);
+                    } else {
+                      vid.dataset && (vid.dataset.edggSrc = eu.href);
+                    }
                     mediaNodes.push(vid);
                   }
                 } catch (_) { /* ignore bad URLs */ }
@@ -1287,11 +1362,23 @@
         var v = videos[vj];
         var vu = v && (v.url || v.src) ? String(v.url || v.src) : null;
         if (vu && /https?:\/\/video\.twimg\.com\//.test(vu) && /\.mp4(?:$|\?)/.test(vu)) {
-          mediaNodes.push(
-            '<video class="edgg-media edgg-tweet-video" controls preload="metadata" playsinline>' +
-              '<source src="' + vu + '" type="video/mp4">' +
-            '</video>'
-          );
+          var safeUrl = escapeHtml(vu);
+          var hostname = '';
+          try {
+            hostname = new URL(vu, location.href).hostname.replace(/^www\./, '').toLowerCase();
+          } catch (_) {}
+          var blockedHost = isCspBlockedHost(hostname);
+          if (blockedHost) {
+            mediaNodes.push(
+              '<video class="edgg-media edgg-tweet-video" data-edgg-src="' + safeUrl + '" controls preload="metadata" playsinline></video>'
+            );
+          } else {
+            mediaNodes.push(
+              '<video class="edgg-media edgg-tweet-video" controls preload="metadata" playsinline>' +
+                '<source src="' + safeUrl + '" type="video/mp4">' +
+              '</video>'
+            );
+          }
         }
       }
     }
@@ -1978,7 +2065,8 @@
     if (!videoEl || videoEl.__edggCspReady) return;
     videoEl.__edggCspReady = true;
 
-    const url = originUrl || getVideoOriginalUrl(videoEl);
+    const datasetUrl = (videoEl && videoEl.dataset && videoEl.dataset.edggSrc) ? videoEl.dataset.edggSrc : null;
+    const url = originUrl || datasetUrl || getVideoOriginalUrl(videoEl);
     if (!url || url.startsWith('blob:')) return;
 
     const toBlob = async () => {

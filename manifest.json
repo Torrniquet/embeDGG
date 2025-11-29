@@ -80,7 +80,9 @@
     {
       "matches": [
         "https://www.destiny.gg/embed/chat*",
-        "https://destiny.gg/embed/chat*"
+        "https://destiny.gg/embed/chat*",
+        "https://www.destiny.gg/bigscreen*",
+        "https://destiny.gg/bigscreen*"
       ],
       "js": [
         "content.js"
@@ -88,6 +90,7 @@
       "css": [
         "styles.css"
       ],
+      "all_frames": true,
       "run_at": "document_end"
     }
   ],

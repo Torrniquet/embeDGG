@@ -1,6 +1,6 @@
 # embeDGG
 
-A Chrome MV3 extension that injects lightweight embeds under messages in DGG.
+A Chrome MV3 extension that injects lightweight embeds under messages in the Destiny.gg chat (embed chat and the bigscreen chat iframe).
 
 
 ![Tweets (Image/Video)](images/tweet_attachment.png) ![Twitch Streams](images/twitch_stream.png)
@@ -13,7 +13,7 @@ A Chrome MV3 extension that injects lightweight embeds under messages in DGG.
 - **Media**: lazy-loaded `<img>` / `<video>` for direct file links on a **hardcoded whitelist** of domains.
 - Settings sync via `chrome.storage.sync`; popup UI with real-time toggles.
 - Injects directly beneath the message node. Width = message container width minus username gutter (best effort), max 566px.
-- Only active on the embed chat page. Heuristic to skip if not logged-in.
+- Active on the embed chat page and inside the bigscreen chat iframe. Heuristic to skip if not logged-in.
 - Setting to avoid auto-embedding by using a spoiler/preview that requires a click to reveal link embed contents (NSFW/NSFL handling).
 - Metal Pipe Protection
 
@@ -41,7 +41,7 @@ A Chrome MV3 extension that injects lightweight embeds under messages in DGG.
 1. Unzip this folder anywhere (suggested: `/Users/torrniquet/Development/Project/embeDGG`).
 2. In Chrome: `chrome://extensions` → toggle **Developer mode**.
 3. Click **Load unpacked** → select the folder.
-4. Open https://www.destiny.gg/embed/chat and test.
+4. Open https://www.destiny.gg/embed/chat or https://www.destiny.gg/bigscreen and test.
 
 
 ## Notes / Roadmap
